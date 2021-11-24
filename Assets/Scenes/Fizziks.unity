@@ -404,6 +404,7 @@ MonoBehaviour:
   velocity: {x: 0, y: 0, z: 0}
   gravityScale: 0
   lockPos: 1
+  grounded: 0
   restitution: 0
 --- !u!1 &963194225
 GameObject:
@@ -520,6 +521,8 @@ MonoBehaviour:
   gravity: {x: 0, y: -9.81, z: 0}
   fizziksObjects:
   - {fileID: 1560764820}
+  - {fileID: 2002122620}
+  - {fileID: 1612711953}
   fizziksCollider: []
 --- !u!4 &1460534177
 Transform:
@@ -612,7 +615,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1560764816}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.07, y: 1.85, z: 2.57}
+  m_LocalPosition: {x: -3.16, y: 3.44, z: 2.57}
   m_LocalScale: {x: 1.6, y: 1.6, z: 1.6}
   m_Children: []
   m_Father: {fileID: 0}
@@ -631,9 +634,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mass: 1
-  velocity: {x: 0, y: 0, z: 0}
-  gravityScale: 0
-  lockPos: 1
+  velocity: {x: 0.5, y: 0, z: 0}
+  gravityScale: 0.15
+  lockPos: 0
+  grounded: 0
   restitution: 0.5
 --- !u!114 &1560764821
 MonoBehaviour:
@@ -759,9 +763,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mass: 1
-  velocity: {x: 0, y: -1, z: 0}
-  gravityScale: 9.8
+  velocity: {x: 0, y: 0, z: 0}
+  gravityScale: 0.1
   lockPos: 0
+  grounded: 0
   restitution: 0.5
 --- !u!1 &2002122619
 GameObject:
@@ -796,9 +801,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mass: 0.5
-  velocity: {x: 0, y: -1, z: 0}
-  gravityScale: 0
+  velocity: {x: -0.5, y: 0, z: 0}
+  gravityScale: 0.1
   lockPos: 0
+  grounded: 0
   restitution: 0.5
 --- !u!23 &2002122621
 MeshRenderer:
@@ -857,7 +863,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2002122619}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.196, y: 3.819, z: 2.57}
+  m_LocalPosition: {x: -0.95, y: 3.26, z: 2.57}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}

@@ -28,12 +28,12 @@ public class FizziksSys : MonoBehaviour
         foreach (FizziksObj obj in fizziksObjects)
         {
             if (obj.lockPos) continue;
-            if (obj.grounded) continue;
-            //if (obj.grounded)
-            //{
-            //    //obj.velocity = new Vector3(obj.velocity.x, 0.0f, obj.velocity.z);
-            //    obj.velocity = new Vector3(0.0f, 0.0f, 0.0f);
-            //}
+            //if (obj.grounded) continue;
+            if (obj.grounded)
+            {
+                //obj.velocity = new Vector3(obj.velocity.x, 0.0f, obj.velocity.z);
+                obj.velocity = new Vector3(0.0f, 0.0f, 0.0f);
+            }
             obj.velocity += gravity * obj.gravityScale * Time.fixedDeltaTime;
         }
 
