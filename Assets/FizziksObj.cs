@@ -3,12 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-public class TestScript : MonoBehaviour
+public class FizziksObj : MonoBehaviour
 {
     public float mass = 1.0f;
     public Vector3 velocity = Vector3.zero;
     //public FizziksSys fizzikSys;
     public float gravityScale= 1.0f;
+    public bool lockPos = false;
+    public bool grounded = false;
+
+    //
+    public float restitution = 0.5f;
 
     // Start is called before the first frame update
     void Start()
