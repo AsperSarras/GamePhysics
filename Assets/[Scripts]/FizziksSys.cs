@@ -27,14 +27,12 @@ public class FizziksSys : MonoBehaviour
 
         foreach (FizziksObj obj in fizziksObjects)
         {
-            if (obj.lockPos) continue;
-            //if (obj.grounded) continue;
-            if (obj.grounded)
+            if (obj.NoGravity)
             {
-                //obj.velocity = new Vector3(obj.velocity.x, 0.0f, obj.velocity.z);
-                obj.velocity = new Vector3(0.0f, 0.0f, 0.0f);
+                obj.gravityScale = 0.0f;
             }
             obj.velocity += gravity * obj.gravityScale * Time.fixedDeltaTime;
+
         }
 
         CollisionUpdate();
@@ -48,14 +46,11 @@ public class FizziksSys : MonoBehaviour
             fizziksObjects[i].velocity += gravity * fizziksObjects[i].gravityScale * Time.deltaTime;
         }
 
-        //int numCheck = 0;
         for (int i = 0; i < fizziksCollider.Count; i++)
         {
             for (int j = i + 1; j < fizziksCollider.Count; j++)
             {
-                if (i == j) continue;
-
-                //Debug.Log("Checking: " + i + " with " + j);
+                if (i == j) continue;;
 
                 FizzikCollisionShapeBase objectA = fizziksCollider[i];
                 FizzikCollisionShapeBase objectB = fizziksCollider[j];
@@ -81,7 +76,6 @@ public class FizziksSys : MonoBehaviour
 
             }
         }
-        //Debug.Log(numCheck);
     }
 
     void ComputeMovementScalars(FizziksObj a, FizziksObj b, out float mtvScalarA, out float mtvScalarB)
@@ -108,20 +102,12 @@ public class FizziksSys : MonoBehaviour
         mtvScalarB = 0.0f;
     }
 
-    void Grounded(FizziksObj a)
-    {
-        a.grounded = true;
-    }
-
     void SphereSphereCollision(FizzikCollisionSphere a, FizzikCollisionSphere b)
     {
         Vector3 displacementBetweenSpheresAtoB = b.transform.position - a.transform.position;
         float distanceBetween = displacementBetweenSpheresAtoB.magnitude;
         float sumRadii = a.radius + b.radius;
-        //
         float penetration = sumRadii - distanceBetween;
-        //
-        //bool isOverlapping = distanceBetween < sumRadii;
         bool isOverlapping = penetration > 0.0f;
 
         if (!isOverlapping)
@@ -129,15 +115,16 @@ public class FizziksSys : MonoBehaviour
             return;
         }
 
-        Color colorA = a.GetComponent<Renderer>().material.color = Color.red;
-        Color colorB = b.GetComponent<Renderer>().material.color = Color.red;
-        //Debug.Log(a.name + " collided with " + b.name);
-        a.GetComponent<Renderer>().material.color = Color.red;
-        b.GetComponent<Renderer>().material.color = Color.red;
+        {
+            Color colorA = a.GetComponent<Renderer>().material.color = Color.red;
+            Color colorB = b.GetComponent<Renderer>().material.color = Color.red;
+            a.GetComponent<Renderer>().material.color = Color.red;
+            b.GetComponent<Renderer>().material.color = Color.red;
+        }
 
         Vector3 CollisionNormalAtoB = displacementBetweenSpheresAtoB / distanceBetween;
 
-        ComputeMovementScalars(a.fizzikObject, b.fizzikObject, out float mtvScalarA,out float mtvScalarB);
+        ComputeMovementScalars(a.fizzikObject, b.fizzikObject, out float mtvScalarA, out float mtvScalarB);
 
         Vector3 minTranslationVectorAtoB = CollisionNormalAtoB * penetration;
         Vector3 TransA = -minTranslationVectorAtoB * mtvScalarA;
@@ -146,40 +133,25 @@ public class FizziksSys : MonoBehaviour
         a.transform.position += TransA;
         b.transform.position += TransB;
 
-        //CollisionInfo collisionInfo;
-        //collisionInfo.colliderA = a;
-        //collisionInfo.colliderB = b;
-        //collisionInfo.colisionNormalAtoB
-        //ApplyVelocityResponse(collisionInfo);
+        //
+        CollisionInfo collisionInfo;
+
+        collisionInfo.colliderA = a;
+        collisionInfo.colliderB = b;
+        collisionInfo.collisionNormalAtoB = CollisionNormalAtoB;
+        collisionInfo.contactPoint = a.transform.position + CollisionNormalAtoB * a.radius;
+        //
+        ApplyVelocityResponse(collisionInfo);
 
     }
 
     void SpherePlaneCollision(FizzikCollisionSphere a, FizzikCollisionPlane b)
     {
-        Vector3 fromPlaneToSphereCenter = b.transform.position - a.transform.position;
+        Vector3 fromPlaneToSphereCenter = a.transform.position - b.transform.position;
 
         float dot = Vector3.Dot(fromPlaneToSphereCenter, b.GetNormal());
-        Debug.Log("Name:" +a.name + "dot product: " + dot);
-
         float distanceFromPlaneToSphereCenter = Mathf.Abs(dot);
-
-        //bool isOverlapping = a.radius > distanceFromPlaneToSphereCenter;
-
-        bool isOverlapping = a.radius > dot*-1;
-
-
-        //if (isOverlapping)
-        //{
-        //    Color colorA = a.GetComponent<Renderer>().material.color = Color.red;
-        //    Color colorB = b.GetComponent<Renderer>().material.color = Color.red;
-        //    //Debug.Log(a.name + " collided with " + b.name);
-        //    //a.GetComponent<Renderer>().material.color = Color.red;
-        //    //b.GetComponent<Renderer>().material.color = Color.red;
-        //}
-
-
-        //float penetration = a.radius - distanceFromPlaneToSphereCenter;
-        //bool isOverlapping = penetration > 0.0f;
+        bool isOverlapping = a.radius > dot;
 
         if (!isOverlapping)
         {
@@ -187,30 +159,71 @@ public class FizziksSys : MonoBehaviour
         }
 
         Color colorA = a.GetComponent<Renderer>().material.color = Color.red;
-        Color colorB = b.GetComponent<Renderer>().material.color = Color.red;
-        //Debug.Log(a.name + " collided with " + b.name);
-        ////a.GetComponent<Renderer>().material.color = Color.red;
-        ////b.GetComponent<Renderer>().material.color = Color.red;
 
-        //ComputeMovementScalars(a.fizzikObject, b.fizzikObject, out float mtvScalarA, out float mtvScalarB);
+        float penetration = a.radius - distanceFromPlaneToSphereCenter;
 
-        //Vector3 CollisionNormalAtoB = fromPlaneToSphereCenter / distanceFromPlaneToSphereCenter;
+        Vector3 CollisionNormalAtoB = b.GetNormal();
 
-        //Vector3 minTranslationVectorAtoB = CollisionNormalAtoB * penetration;
-        
-        Vector3 GroundedDist = new Vector3(a.transform.position.x, b.transform.position.y + a.radius, a.transform.position.z);
-        
-        ////Vector3 TransB = minTranslationVectorAtoB * mtvScalarB;
+        Vector3 minTranslationVectorAtoB = CollisionNormalAtoB * penetration;
+        Vector3 TransA = minTranslationVectorAtoB * 1.0f;
 
-        a.transform.position = GroundedDist;
-        Grounded(a.fizzikObject);
-        
-        ////b.transform.position += TransB;
+        a.transform.position += minTranslationVectorAtoB;
+
+        ////
+        //CollisionInfo collisionInfo;
+
+        //collisionInfo.colliderA = a;
+        //collisionInfo.colliderB = b;
+        //collisionInfo.collisionNormalAtoB = CollisionNormalAtoB;
+        //collisionInfo.contactPoint = a.transform.position + CollisionNormalAtoB * a.radius;
+
+        //ApplyVelocityResponse(collisionInfo);
+    }
+
+    void ApplyVelocityResponse(CollisionInfo collisionInfo)
+    {
+        FizziksObj objA = collisionInfo.colliderA.fizzikObject;
+        FizziksObj objB = collisionInfo.colliderB.fizzikObject;
+        Vector3 normal = collisionInfo.collisionNormalAtoB;
+
+        Vector3 relativeVelocityAB = objB.velocity - objA.velocity;
+
+        float relativeNormalVelocityAB = Vector3.Dot(relativeVelocityAB, normal);
+
+        if (relativeNormalVelocityAB >= 0.0f)
+        {
+            return;
+        }
+
+        float restitution = (objA.bounciness + objB.bounciness) * 0.5f;
+
+        float deltaV = -(relativeNormalVelocityAB * (1.0f + restitution));
+        float impulse;
+
+        if (!objA.lockPos && objB.lockPos)
+        {
+            impulse = deltaV * objA.mass;
+            objA.velocity -= normal * impulse / objA.mass;
+        }
+
+        else if (objA.lockPos && !objB.lockPos)
+        {
+            impulse = deltaV * objB.mass;
+            objB.velocity += normal * impulse / objB.mass;
+        }
+
+        else if (!objA.lockPos && !objB.lockPos)
+        {
+            impulse = deltaV / ((1.0f / objA.mass) + (1.0f / objB.mass)); //something with deltaV and both masses. Avarage of both masses
+            objA.velocity -= normal * impulse / objA.mass;
+            objB.velocity += normal * impulse / objB.mass;
+        }
+        else
+        {
+            return;
+        }
+
 
     }
 
-    //void ApplyVelocityResponse(CollisionInfo collisionInfo)
-    //{
-
-    //}
 }

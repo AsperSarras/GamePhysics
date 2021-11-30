@@ -12,6 +12,7 @@ public enum Axis
 public class FizzikCollisionPlane : FizzikCollisionShapeBase
 {
     public Axis alignment = Axis.Y;
+    public bool Ground = false;
 
     public override FizziksColliderShape GetColliderShape()
     {
