@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class FizziksSys : MonoBehaviour
 {
+    public float minRelativeVelocityBounce = 3.0f;
     public Vector3 gravity = new Vector3(0, -9.81f, 0);
     public List<FizziksObj> fizziksObjects = new List<FizziksObj>();
     public List<FizzikCollisionShapeBase> fizziksCollider = new List<FizzikCollisionShapeBase>();
@@ -74,6 +75,22 @@ public class FizziksSys : MonoBehaviour
                        (FizzikCollisionPlane)objectA);
                 }
 
+                if (shapeA == FizziksColliderShape.AABB && shapeB == FizziksColliderShape.AABB)
+                {
+                    AABBAABBCollision((FizzikCollisionAABB)objectA,
+                       (FizzikCollisionAABB)objectB);
+                }
+
+                if (shapeA == FizziksColliderShape.Sphere && shapeB == FizziksColliderShape.AABB)
+                {
+                    SphereAABBCollision((FizzikCollisionSphere)objectA,
+                       (FizzikCollisionAABB)objectB);
+                }
+                if (shapeB == FizziksColliderShape.Sphere && shapeA == FizziksColliderShape.AABB)
+                {
+                    SphereAABBCollision((FizzikCollisionSphere)objectB,
+                       (FizzikCollisionAABB)objectA);
+                }
             }
         }
     }
@@ -124,24 +141,28 @@ public class FizziksSys : MonoBehaviour
 
         Vector3 CollisionNormalAtoB = displacementBetweenSpheresAtoB / distanceBetween;
 
-        ComputeMovementScalars(a.fizzikObject, b.fizzikObject, out float mtvScalarA, out float mtvScalarB);
+        //ComputeMovementScalars(a.fizzikObject, b.fizzikObject, out float mtvScalarA, out float mtvScalarB);
 
         Vector3 minTranslationVectorAtoB = CollisionNormalAtoB * penetration;
-        Vector3 TransA = -minTranslationVectorAtoB * mtvScalarA;
-        Vector3 TransB = minTranslationVectorAtoB * mtvScalarB;
+        //Vector3 TransA = -minTranslationVectorAtoB * mtvScalarA;
+        //Vector3 TransB = minTranslationVectorAtoB * mtvScalarB;
 
-        a.transform.position += TransA;
-        b.transform.position += TransB;
+        //a.transform.position += TransA;
+        //b.transform.position += TransB;
 
-        //
-        CollisionInfo collisionInfo;
+        ////
+        //CollisionInfo collisionInfo;
 
-        collisionInfo.colliderA = a;
-        collisionInfo.colliderB = b;
-        collisionInfo.collisionNormalAtoB = CollisionNormalAtoB;
-        collisionInfo.contactPoint = a.transform.position + CollisionNormalAtoB * a.radius;
-        //
-        ApplyVelocityResponse(collisionInfo);
+        //collisionInfo.colliderA = a;
+        //collisionInfo.colliderB = b;
+        //collisionInfo.collisionNormalAtoB = CollisionNormalAtoB;
+        //collisionInfo.contactPoint = a.transform.position + CollisionNormalAtoB * a.radius;
+        ////
+        //ApplyVelocityResponse(collisionInfo);
+
+        Vector3 contact = a.transform.position + CollisionNormalAtoB * a.radius;
+
+        ApplyMinTranslationVector(a, b,minTranslationVectorAtoB, CollisionNormalAtoB, contact);
 
     }
 
@@ -169,15 +190,115 @@ public class FizziksSys : MonoBehaviour
 
         a.transform.position += minTranslationVectorAtoB;
 
-        ////
-        //CollisionInfo collisionInfo;
+        //Vector3 contact = a.transform.position + CollisionNormalAtoB * a.radius;
+        //ApplyMinTranslationVector(a, b, minTranslationVectorAtoB, CollisionNormalAtoB, contact);
+    }
 
-        //collisionInfo.colliderA = a;
-        //collisionInfo.colliderB = b;
-        //collisionInfo.collisionNormalAtoB = CollisionNormalAtoB;
-        //collisionInfo.contactPoint = a.transform.position + CollisionNormalAtoB * a.radius;
+    void AABBAABBCollision(FizzikCollisionAABB a, FizzikCollisionAABB b)
+    {
+        Vector3 halfSizeA = a.GetHalfSize();
+        Vector3 halfSizeB = b.GetHalfSize();
 
-        //ApplyVelocityResponse(collisionInfo);
+        Vector3 displacementAToB = b.transform.position - a.transform.position;
+        float distX = Mathf.Abs(displacementAToB.x);
+        float distY = Mathf.Abs(displacementAToB.y);
+        float distZ = Mathf.Abs(displacementAToB.z);
+
+        float penetrationX = halfSizeA.x + halfSizeB.x - distX;
+        float penetrationY = halfSizeA.y + halfSizeB.y - distY;
+        float penetrationZ = halfSizeA.z + halfSizeB.z - distZ;
+
+        if (penetrationX < 0 || penetrationY < 0 || penetrationZ < 0)
+        {
+            return;
+        }
+
+        Debug.Log("Debug ");
+
+        Vector3 minimunTranslationVectorAToB;
+        Vector3 collisionNormalAToB;
+        Vector3 contact;
+
+        if (penetrationX < penetrationY && penetrationX < penetrationZ)
+        {
+            collisionNormalAToB = new Vector3(Mathf.Sign(displacementAToB.x), 0, 0);
+            minimunTranslationVectorAToB = collisionNormalAToB * penetrationX;
+        }
+        else if (penetrationY < penetrationX && penetrationY < penetrationZ)
+        {
+            collisionNormalAToB = new Vector3(0, Mathf.Sign(displacementAToB.y), 0);
+            minimunTranslationVectorAToB = collisionNormalAToB * penetrationY;
+        }
+        else //if (penetrationZ < penetrationY && penetrationZ < penetrationX)
+        {
+            collisionNormalAToB = new Vector3(0, 0, Mathf.Sign(displacementAToB.z));
+            minimunTranslationVectorAToB = collisionNormalAToB * penetrationZ;
+        }
+        contact = a.transform.position + minimunTranslationVectorAToB;
+        ApplyMinTranslationVector(a, b, minimunTranslationVectorAToB, collisionNormalAToB, contact);
+    }
+
+    //
+    void SphereAABBCollision(FizzikCollisionSphere a, FizzikCollisionAABB b)
+    {
+        Vector3 halfSizeB = b.GetHalfSize();
+
+        Vector3 displacementAToB = b.transform.position - a.transform.position;
+        float distX = Mathf.Abs(displacementAToB.x);
+        float distY = Mathf.Abs(displacementAToB.y);
+        float distZ = Mathf.Abs(displacementAToB.z);
+
+        float penetrationX =  a.radius + halfSizeB.x - distX;
+        float penetrationY =  a.radius + halfSizeB.y - distY;
+        float penetrationZ =  a.radius + halfSizeB.z - distZ;
+
+        if (penetrationX < 0 || penetrationY < 0 || penetrationZ < 0)
+        {
+            return;
+        }
+
+        Vector3 minimunTranslationVectorAToB;
+        Vector3 collisionNormalAToB;
+        Vector3 contact;
+
+        if (penetrationX < penetrationY && penetrationX < penetrationZ)
+        {
+            collisionNormalAToB = new Vector3(Mathf.Sign(displacementAToB.x), 0, 0);
+            minimunTranslationVectorAToB = collisionNormalAToB * penetrationX;
+        }
+        else if (penetrationY < penetrationX && penetrationY < penetrationZ)
+        {
+            collisionNormalAToB = new Vector3(0, Mathf.Sign(displacementAToB.y), 0);
+            minimunTranslationVectorAToB = collisionNormalAToB * penetrationY;
+        }
+        else //if (penetrationZ < penetrationY && penetrationZ < penetrationX)
+        {
+            collisionNormalAToB = new Vector3(0, 0, Mathf.Sign(displacementAToB.z));
+            minimunTranslationVectorAToB = collisionNormalAToB * penetrationZ;
+        }
+        contact = a.transform.position + minimunTranslationVectorAToB;
+        ApplyMinTranslationVector(a, b, minimunTranslationVectorAToB, collisionNormalAToB, contact);
+    }
+
+    void ApplyMinTranslationVector(FizzikCollisionShapeBase a, FizzikCollisionShapeBase b, Vector3 minTranslationVector, Vector3 CollisionNormalAtoB, Vector3 contact)
+    {
+        ComputeMovementScalars(a.fizzikObject, b.fizzikObject, out float mtvScalarA, out float mtvScalarB);
+
+        Vector3 TransA = -minTranslationVector * mtvScalarA;
+        Vector3 TransB = minTranslationVector * mtvScalarB;
+
+        a.transform.position += TransA;
+        b.transform.position += TransB;
+
+        //
+        CollisionInfo collisionInfo;
+
+        collisionInfo.colliderA = a;
+        collisionInfo.colliderB = b;
+        collisionInfo.collisionNormalAtoB = CollisionNormalAtoB;
+        collisionInfo.contactPoint = contact;
+        //
+        ApplyVelocityResponse(collisionInfo);
     }
 
     void ApplyVelocityResponse(CollisionInfo collisionInfo)
@@ -196,8 +317,16 @@ public class FizziksSys : MonoBehaviour
         }
 
         float restitution = (objA.bounciness + objB.bounciness) * 0.5f;
-
-        float deltaV = -(relativeNormalVelocityAB * (1.0f + restitution));
+        float deltaV;
+        if (relativeNormalVelocityAB < -minRelativeVelocityBounce)
+        {
+            deltaV = -(relativeNormalVelocityAB * (1.0f + restitution));
+        }
+        else
+        {
+            deltaV = -(relativeNormalVelocityAB * (1.0f));
+        }
+        //float deltaV = -(relativeNormalVelocityAB * (1.0f + restitution));
         float impulse;
 
         if (!objA.lockPos && objB.lockPos)
@@ -214,7 +343,7 @@ public class FizziksSys : MonoBehaviour
 
         else if (!objA.lockPos && !objB.lockPos)
         {
-            impulse = deltaV / ((1.0f / objA.mass) + (1.0f / objB.mass)); //something with deltaV and both masses. Avarage of both masses
+            impulse = deltaV / ((1.0f / objA.mass) + (1.0f / objB.mass));
             objA.velocity -= normal * impulse / objA.mass;
             objB.velocity += normal * impulse / objB.mass;
         }
@@ -222,6 +351,38 @@ public class FizziksSys : MonoBehaviour
         {
             return;
         }
+
+        Vector3 relativeSurfaceVelocity = relativeVelocityAB - (relativeNormalVelocityAB * normal);
+
+        //ApplyFriction(objA, objB, relativeSurfaceVelocity, normal);
+    }
+
+    void ApplyFriction(FizziksObj a, FizziksObj b, Vector3 relativeSurfaceVelocity, Vector3 normalAToB)
+    {
+        float minFrictionVelocity = 0.0001f;
+        float kFrictionCoefficient = (a.bounciness + b.bounciness) *0.5f;
+        float relativeSpeed = relativeSurfaceVelocity.magnitude;
+
+
+        if (relativeSpeed<minFrictionVelocity)
+        {
+            return;
+        }
+
+        Vector3 directionToApplyFriction = relativeSurfaceVelocity/relativeSpeed;
+        float gravityAccelAlongNormal = Vector3.Dot(gravity, normalAToB);
+
+        Vector3 frictionAccel = directionToApplyFriction * -gravityAccelAlongNormal * kFrictionCoefficient;
+
+        if(!a.lockPos)
+        {
+            a.velocity -= frictionAccel * Time.fixedDeltaTime;
+        }
+        if (!b.lockPos)
+        {
+            b.velocity += frictionAccel * Time.fixedDeltaTime;
+        }
+       
 
 
     }
